@@ -1,4 +1,7 @@
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.ParseException;
 
 import javax.management.Query;
@@ -15,7 +18,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.RAMDirectory;
+// import org.apache.lucene.store.BaseDirectory;
+import org.apache.lucene.store.MMapDirectory;
 
 public class HelloLucene {
     public static void main(String[] args) throws IOException, ParseException {
@@ -24,7 +28,7 @@ public class HelloLucene {
         StandardAnalyzer analyzer = new StandardAnalyzer();
 
         // 1. create the index
-        Directory index = new RAMDirectory();
+        Directory index = new MMapDirectory(new File("~/").toPath());
 
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
 
@@ -40,7 +44,7 @@ public class HelloLucene {
 
         // the "title" arg specifies the default field to use
         // when no field is explicitly specified in the query.
-        Query q = new QueryParser("title", analyzer).parse(querystr);
+        org.apache.lucene.search.Query q = new QueryParser("title", analyzer).parse(querystr);
 
         // 3. search
         int hitsPerPage = 10;
@@ -53,7 +57,7 @@ public class HelloLucene {
         System.out.println("Found " + hits.length + " hits.");
         for(int i=0;i<hits.length;++i) {
             int docId = hits[i].doc;
-            Document d = searcher.doc(docId);
+            org.apache.lucene.document.Document d = searcher.doc(docId);
             System.out.println((i + 1) + ". " + d.get("isbn") + "\t" + d.get("title"));
         }
 
@@ -63,11 +67,11 @@ public class HelloLucene {
     }
 
     private static void addDoc(IndexWriter w, String title, String isbn) throws IOException {
-        Document doc = new Document();
-        doc.add(new TextField("title", title, Field.Store.YES));
+        org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
+        doc.add(new TextField("title", title, org.apache.lucene.document.Field.Store.YES));
 
         // use a string field for isbn because we don't want it tokenized
-        doc.add(new StringField("isbn", isbn, Field.Store.YES));
+        doc.add(new StringField("isbn", isbn, org.apache.lucene.document.Field.Store.YES));
         w.addDocument(doc);
     }
 }
