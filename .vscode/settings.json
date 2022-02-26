@@ -1,7 +1,5 @@
 {
-    "java.project.sourcePaths": [
-        "."
-    ],
+    "java.project.sourcePaths": [],
     "java.project.referencedLibraries": [
         "lib/**/*.jar",
         "lucene-analysis-common-9.0.0.jar",
