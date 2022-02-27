@@ -24,7 +24,7 @@ public class Main {
 		// 0. Specify the analyzer for tokenizing text.
 		// The same analyzer should be used for indexing and searching
 		StandardAnalyzer analyzer = new StandardAnalyzer();
-		File file = new File("../corpus_data.txt");
+		File file = new File("corpus_data.txt");
 		Scanner sin = new Scanner(file);
 
 		// 1. create the index
@@ -34,16 +34,27 @@ public class Main {
 
 		// TODO: add our docs instead
 		IndexWriter w = new IndexWriter(index, config);
-		while(sin.hasNext()) {
-			Document doc = new Document();
-			doc.add(new StringField("title", sin.next(), Field.Store.YES));
-			doc.add(new TextField("contents", sin.next(), Field.Store.YES));
-			w.addDocument(doc);
+		try {
+			while(sin.hasNextLine()) {
+//				System.out.println("hello");
+				Document doc = new Document();
+				String title = sin.nextLine();
+				String contents = sin.nextLine();
+//				System.out.println(title);
+//				System.out.println(contents);
+				doc.add(new Field("title", title, TextField.TYPE_STORED));
+				doc.add(new Field("contents", contents, TextField.TYPE_STORED));
+				w.addDocument(doc);
+			}
+		}
+		catch(Exception e) {
+			System.out.println(e);
 		}
 		w.close();
 
 		// 2. query
-		String querystr = args.length > 0 ? args[0] : "lucene";
+		String querystr = args.length > 0 ? args[0] : "shear";
+		System.out.println(querystr);
 
 		// the "title" arg specifies the default field to use
 		// when no field is explicitly specified in the query.
@@ -70,20 +81,12 @@ public class Main {
 		for (int i = 0; i < hits.length; ++i) {
 			int docId = hits[i].doc;
 			org.apache.lucene.document.Document d = searcher.doc(docId);
-			System.out.println((i + 1) + ". " + d.get("isbn") + "\t" + d.get("title"));
+			System.out.println((i + 1) + ". \t" + d.get("title") + "\t\t\t" + d.get("contents"));
+			System.out.println(d);
 		}
 
 		// reader can only be closed when there
 		// is no need to access the documents any more.
 		reader.close();
-	}
-
-	private static void addDoc(IndexWriter w, String title, String isbn) throws IOException {
-		org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
-		doc.add(new TextField("title", title, Field.Store.YES));
-
-		// use a string field for isbn because we don't want it tokenized
-		doc.add(new StringField("isbn", isbn, Field.Store.YES));
-		w.addDocument(doc);
 	}
 }
