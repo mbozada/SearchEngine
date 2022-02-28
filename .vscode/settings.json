@@ -1,10 +1,25 @@
 {
-    "java.project.sourcePaths": [],
-    "java.project.referencedLibraries": [
-        "lib/**/*.jar",
-        "lucene-analysis-common-9.0.0.jar",
-        "lucene-core-9.0.0.jar",
-        "lucene-demo-9.0.0.jar",
-        "lucene-queryparser-9.0.0.jar"
-    ]
+    "java.project.sourcePaths": [
+        "src"
+    ],
+    "java.project.referencedLibraries": {
+        "include": [
+            "lib/**/*.jar",
+            "lucene-analysis-common-9.0.0.jar",
+            "lucene-core-9.0.0.jar",
+            "lucene-demo-9.0.0.jar",
+            "lucene-queryparser-9.0.0.jar",
+            "c:\\Users\\Michael\\Projects\\SearchEngine\\lib\\lucene-analysis-common-9.0.0.jar",
+            "c:\\Users\\Michael\\Projects\\SearchEngine\\lib\\lucene-core-9.0.0.jar",
+            "c:\\Users\\Michael\\Projects\\SearchEngine\\lib\\lucene-demo-9.0.0.jar",
+            "c:\\Users\\Michael\\Projects\\SearchEngine\\lib\\lucene-queries-9.0.0.jar",
+            "c:\\Users\\Michael\\Projects\\SearchEngine\\lib\\lucene-queryparser-9.0.0.jar"
+        ],
+        "exclude": [
+            "lib/lucene-analysis-common-9.0.0.jar",
+            "lib/lucene-core-9.0.0.jar",
+            "lib/lucene-demo-9.0.0.jar",
+            "lib/lucene-queryparser-9.0.0.jar"
+        ]
+    }
 }

@@ -28,7 +28,7 @@ public class Main {
 		Scanner sin = new Scanner(file);
 
 		// 1. create the index
-		Directory index = FSDirectory.open((new File("~/").toPath()));
+		Directory index = FSDirectory.open((new File("./index/").toPath()));
 
 		IndexWriterConfig config = new IndexWriterConfig(analyzer);
 
