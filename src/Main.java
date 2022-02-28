@@ -8,6 +8,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -32,16 +33,20 @@ public class Main {
 
 		IndexWriterConfig config = new IndexWriterConfig(analyzer);
 
+		int count = 0;
 		// TODO: add our docs instead
 		IndexWriter w = new IndexWriter(index, config);
 		try {
 			while(sin.hasNextLine()) {
-//				System.out.println("hello");
+				// System.out.println("hello");
 				Document doc = new Document();
 				String title = sin.nextLine();
 				String contents = sin.nextLine();
-//				System.out.println(title);
-//				System.out.println(contents);
+				// System.out.println(title);
+				// System.out.println(contents);
+				count++;
+				String countString = Integer.toString(count);
+				doc.add(new Field("doc_id", countString, TextField.TYPE_STORED));
 				doc.add(new Field("title", title, TextField.TYPE_STORED));
 				doc.add(new Field("contents", contents, TextField.TYPE_STORED));
 				w.addDocument(doc);
@@ -81,7 +86,7 @@ public class Main {
 		for (int i = 0; i < hits.length; ++i) {
 			int docId = hits[i].doc;
 			org.apache.lucene.document.Document d = searcher.doc(docId);
-			System.out.println((i + 1) + ". \t" + d.get("title") + "\t\t\t" + d.get("contents"));
+			System.out.println((i + 1) + ". \t" + d.get("doc_id") + ".\t" + d.get("title") + "\t\t\t" + d.get("contents"));
 			System.out.println(d);
 		}
 
