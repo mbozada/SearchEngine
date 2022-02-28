@@ -10,6 +10,7 @@ with open('./corpus/cran.all.1400') as f:
     join_abstracts = False
     abstract = ""
     abstract_list = []
+
     for line in lines:
         
         # Titles
@@ -19,7 +20,6 @@ with open('./corpus/cran.all.1400') as f:
                 title = ""
             join_titles = False
             
-
         if join_titles:
             title += line.replace("\n"," ").replace("\r"," ").replace(" .","")
 
@@ -34,8 +34,6 @@ with open('./corpus/cran.all.1400') as f:
                 abstract = ""
             join_abstracts = False
             
-            
-
         if join_abstracts:
             abstract += line.replace("\n"," ").replace("\r"," ").replace(" .","")
 
@@ -47,12 +45,16 @@ with open('./corpus/cran.all.1400') as f:
 # of the default "" reset for title and abstract, you'll find they eventually drift.
 # However, the title and abstract match appropriately in almost all cases. Very weird.
 
-# print(title_count)
-# print(abstract_count)
-# print(title_list[0])
-# print(abstract_list[0])
-# print(len(title_list))
-# print(len(abstract_list))
+# print(f"Title Count: {title_count}")
+# print(f"Length Title List: {len(title_list)}\n")
+
+# print(f"Abstract Count: {abstract_count}")
+# print(f"Length Abstract List: {len(abstract_list)}")
+
+# print(title_list[-1])
+# print(abstract_list[-1])
+
+
 
 with open ('corpus_data.txt', 'w') as f:
     for i in range(len(abstract_list)):
