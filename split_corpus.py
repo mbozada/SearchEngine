@@ -54,8 +54,6 @@ with open('./corpus/cran.all.1400') as f:
 # print(title_list[-1])
 # print(abstract_list[-1])
 
-
-
 with open ('corpus_data.txt', 'w') as f:
     for i in range(len(abstract_list)):
         f.write(title_list[i] + '\n')
