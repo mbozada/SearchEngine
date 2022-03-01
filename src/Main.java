@@ -3,6 +3,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -13,10 +15,12 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -45,7 +49,7 @@ public class Main {
 		// Search index using test queries.
 		ArrayList<ArrayList<Integer>> guess_ids = new ArrayList<ArrayList<Integer>>();
 		for(String query: queries) {
-			guess_ids.add(searchIndex(analyzer, index, query, "contents", 1400));
+			guess_ids.add(searchIndex(analyzer, index, query));
 		}
 
 		// Process myQueryRels.txt for future Recall and Precision Calculations
@@ -132,14 +136,15 @@ public class Main {
 	 * @param analyzer The analyzer used by indexer and the indexSearcher.
 	 * @param index The directory containing the index.
 	 * @param query The query string.
-	 * @param fieldToSearch The index field to search
-	 * @param searchSize The maximum number of documents to return. Set to 1400 to encompass the entire corpus.
 	 * @return An ArrayList of doc_ids of the found Documents.
 	*/
-	public static ArrayList<Integer> searchIndex(StandardAnalyzer analyzer, Directory index, String query, String fieldToSearch, Integer searchSize) throws IOException, ParseException {
-		// the "title" arg specifies the default field to use
-		// when no field is explicitly specified in the query.
-		QueryParser parser = new QueryParser(fieldToSearch, analyzer);
+	public static ArrayList<Integer> searchIndex(StandardAnalyzer analyzer, Directory index, String query) throws IOException, ParseException {
+		// Boosts the title field over contents for increased MAP
+		Map<String, Float> boost = new HashMap<String, Float>();
+		boost.put("title", (float) .75);
+		boost.put("contents", (float) .25);
+		MultiFieldQueryParser parser = new MultiFieldQueryParser(new String[] {"title", "contents"}, analyzer, boost);
+
 		org.apache.lucene.search.Query q;
 		try {
 			q = parser.parse(query);
@@ -151,10 +156,15 @@ public class Main {
 		}
 
 		// Search the index.
-		int hitsPerPage = searchSize;
 		IndexReader reader = DirectoryReader.open(index);
 		IndexSearcher searcher = new IndexSearcher(reader);
-		TopDocs docs = searcher.search(q, hitsPerPage);
+
+		// Count the hits
+		TotalHitCountCollector collector = new TotalHitCountCollector();
+		searcher.search(q, collector);
+
+		// Grab all hits
+		TopDocs docs = searcher.search(q, collector.getTotalHits());
 		ScoreDoc[] hits = docs.scoreDocs;
 		ArrayList<Integer> hits_arr = new ArrayList<Integer>();
 
@@ -162,7 +172,8 @@ public class Main {
 		for (int i = 0; i < hits.length; ++i) {
 			int docId = hits[i].doc;
 			hits_arr.add(docId);
-			org.apache.lucene.document.Document d = searcher.doc(docId);
+			// Could be used to print out document fields
+			// org.apache.lucene.document.Document d = searcher.doc(docId);
 		}
 
 		reader.close();
