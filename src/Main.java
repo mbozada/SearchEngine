@@ -23,89 +23,18 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class Main {
-	public static ArrayList<Integer> ourSearch(String our_query, int counter) throws IOException, ParseException {
-		// 0. Specify the analyzer for tokenizing text.
-		// The same analyzer should be used for indexing and searching
+	public static void main(String[] arggggggggggggggggggggggg) throws IOException, ParseException {
+		// Create Analyzer and open Index's Directory
 		StandardAnalyzer analyzer = new StandardAnalyzer();
-		File file = new File("corpus_data.txt");
-		Scanner fin = new Scanner(file);
-
-		// 1. create the index
 		Directory index = FSDirectory.open((new File("./index/").toPath()));
 
-		IndexWriterConfig config = new IndexWriterConfig(analyzer);
-		boolean preserveIndex = false;
-		if(counter < 1) {
-			int count = 0;
-			// TODO: add our docs instead
-			IndexWriter w = new IndexWriter(index, config);
-			try {
-				while(fin.hasNextLine()) {
-					// System.out.println("hello");
-					Document doc = new Document();
-					String title = fin.nextLine();
-					String contents = fin.nextLine();
-					// System.out.println(title);
-					// System.out.println(contents);
-					count++;
-					String countString = Integer.toString(count);
-					doc.add(new Field("doc_id", countString, TextField.TYPE_STORED));
-					doc.add(new Field("title", title, TextField.TYPE_STORED));
-					doc.add(new Field("contents", contents, TextField.TYPE_STORED));
-					w.addDocument(doc);
-				}
-			}
-			catch(Exception e) {
-				System.out.println(e);
-			}
-			w.close();
+		// If necessary, create the index using corpus_data.txt
+		boolean createIndex = true;
+		if(createIndex) {
+			createIndex(analyzer, index, "corpus_data.txt");
 		}
-		fin.close();
 		
-
-		// 2. query
-		while(true) {
-			
-				// the "title" arg specifies the default field to use
-			// when no field is explicitly specified in the query.
-			QueryParser parser = new QueryParser("title", analyzer);
-			org.apache.lucene.search.Query q;
-			try {
-				q = parser.parse(our_query);
-			}
-			// I AM SO SORRY
-			catch (Exception e) {
-				System.out.println(e);
-				q = null;
-			}
-
-			// 3. search
-			int hitsPerPage = 1401;
-			IndexReader reader = DirectoryReader.open(index);
-			IndexSearcher searcher = new IndexSearcher(reader);
-			TopDocs docs = searcher.search(q, hitsPerPage);
-			ScoreDoc[] hits = docs.scoreDocs;
-			ArrayList<Integer> hits_arr = new ArrayList<Integer>();
-
-			// 4. display results
-			System.out.println("Found " + hits.length + " hits.");
-			for (int i = 0; i < hits.length; ++i) {
-				int docId = hits[i].doc;
-				hits_arr.add(docId);
-				org.apache.lucene.document.Document d = searcher.doc(docId);
-				// System.out.println((i + 1) + ". \t" + d.get("doc_id") + ".\t" + d.get("title") + "\t\t\t" + d.get("contents"));
-				// System.out.println(d.get("doc_id"));
-			}
-
-			// reader can only be closed when there
-			// is no need to access the documents any more.
-			reader.close();
-			return hits_arr;
-			}
-		
-	}
-
-	public static void main(String[] arggggggggggggggggggggggg) throws IOException, ParseException {
+		// Search test queries from myQuery.txt
 		ArrayList<Integer> query_ids = new ArrayList<Integer>();
 		ArrayList<String> queries = new ArrayList<String>();
 		File f = new File("myQuery.txt");
@@ -117,12 +46,11 @@ public class Main {
 		// System.out.println(truth_ids);
 		// System.out.println(turth_queries);
 		ArrayList<ArrayList<Integer>> guess_ids = new ArrayList<ArrayList<Integer>>();
-		int count = 0;
 		for(String query: queries) {
-			guess_ids.add(ourSearch(query, count));
-			count++;
+			guess_ids.add(searchIndex(analyzer, index, query, "title"));
 		}
 
+		// Process myQueryRels.txt into Array of Arrays of Ints for relevant document matching.
 		f = new File("myQueryRels.txt");
 		fin = new Scanner(f);
 		ArrayList<ArrayList<Integer>> rel_arr = new ArrayList<ArrayList<Integer>>();
@@ -141,6 +69,7 @@ public class Main {
 			rel_arr.add(rels);
 			// System.out.println(rel_arr);
 		}
+		fin.close();
 		System.out.println(rel_arr);
 		ArrayList<Integer> tp_arr = new ArrayList<Integer>();
 		ArrayList<Double> ap_arr = new ArrayList<Double>();
@@ -152,6 +81,76 @@ public class Main {
 		System.out.println(ap_arr);
 		// MAP IT UP
 
+	}
+
+	public static void createIndex(StandardAnalyzer analyzer, Directory index, String corpusPath) throws IOException {
+
+		File file = new File(corpusPath);
+		Scanner fin = new Scanner(file);
+		IndexWriterConfig config = new IndexWriterConfig(analyzer);
+		IndexWriter w = new IndexWriter(index, config);
+		Integer count = 0;
+
+		try {
+			while(fin.hasNextLine()) {
+				// System.out.println("hello");
+				Document doc = new Document();
+				String title = fin.nextLine();
+				String contents = fin.nextLine();
+				// System.out.println(title);
+				// System.out.println(contents);
+				count++;
+				String countString = Integer.toString(count);
+				doc.add(new Field("doc_id", countString, TextField.TYPE_STORED));
+				doc.add(new Field("title", title, TextField.TYPE_STORED));
+				doc.add(new Field("contents", contents, TextField.TYPE_STORED));
+				w.addDocument(doc);
+			}
+		}
+		catch(Exception e) {
+			System.out.println(e);
+		}
+		w.close();
+		fin.close();
+	}
+
+	public static ArrayList<Integer> searchIndex(StandardAnalyzer analyzer, Directory index, String query, String fieldToSearch) throws IOException, ParseException {
+		// 2. query
+		while(true) {
+			// the "title" arg specifies the default field to use
+			// when no field is explicitly specified in the query.
+			QueryParser parser = new QueryParser(fieldToSearch, analyzer);
+			org.apache.lucene.search.Query q;
+			try {
+				q = parser.parse(query);
+			}
+			// I AM SO SORRY
+			catch (Exception e) {
+				System.out.println(e);
+				q = null;
+			}
+
+			// 3. search
+			int hitsPerPage = 1401;
+			IndexReader reader = DirectoryReader.open(index);
+			IndexSearcher searcher = new IndexSearcher(reader);
+			TopDocs docs = searcher.search(q, hitsPerPage);
+			ScoreDoc[] hits = docs.scoreDocs;
+			ArrayList<Integer> hits_arr = new ArrayList<Integer>();
+
+			// Add hits to array.
+			for (int i = 0; i < hits.length; ++i) {
+				int docId = hits[i].doc;
+				hits_arr.add(docId);
+				org.apache.lucene.document.Document d = searcher.doc(docId);
+			}
+
+			// reader can only be closed when there
+			// is no need to access the documents any more.
+			reader.close();
+			return hits_arr;
+			}
+		
 	}
 
 	public static int findTruePositives(ArrayList<Integer> guess, ArrayList<Integer> truth) {
