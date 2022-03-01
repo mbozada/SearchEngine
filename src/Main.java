@@ -8,9 +8,7 @@ import java.util.Scanner;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -34,7 +32,7 @@ public class Main {
 			createIndex(analyzer, index, "corpus_data.txt");
 		}
 		
-		// Search test queries from myQuery.txt
+		// Load in test queries from myQuery.txt
 		ArrayList<Integer> query_ids = new ArrayList<Integer>();
 		ArrayList<String> queries = new ArrayList<String>();
 		File f = new File("myQuery.txt");
@@ -43,14 +41,14 @@ public class Main {
 			query_ids.add(Integer.parseInt(fin.nextLine()));
 			queries.add(fin.nextLine());
 		}
-		// System.out.println(truth_ids);
-		// System.out.println(turth_queries);
+
+		// Search index using test queries.
 		ArrayList<ArrayList<Integer>> guess_ids = new ArrayList<ArrayList<Integer>>();
 		for(String query: queries) {
-			guess_ids.add(searchIndex(analyzer, index, query, "contents"));
+			guess_ids.add(searchIndex(analyzer, index, query, "contents", 1400));
 		}
 
-		// Process myQueryRels.txt into Array of Arrays of Ints for relevant document matching.
+		// Process myQueryRels.txt for future Recall and Precision Calculations
 		f = new File("myQueryRels.txt");
 		fin = new Scanner(f);
 		ArrayList<ArrayList<Integer>> rel_arr = new ArrayList<ArrayList<Integer>>();
@@ -62,14 +60,12 @@ public class Main {
 				if(i != 0) {
 					rels.add(Integer.parseInt(nums_to_str_arr[i]));
 				}
-				else {
-					// empty else
-				}
 			}
 			rel_arr.add(rels);
-			// System.out.println(rel_arr);
 		}
 		fin.close();
+
+		// Calculate Recall, Precision, and MAP
 		ArrayList<Double> guess_sizes = new ArrayList<Double>();
 		ArrayList<Double> tp_arr = new ArrayList<Double>();
 		ArrayList<Double> ap_arr = new ArrayList<Double>();
@@ -89,27 +85,28 @@ public class Main {
 			System.out.format("Recall: %f\n", recall);
 
 			Double precision = tp_arr.get(i) / guess_sizes.get(i);
-			System.out.format("Precision: %f\n", precision);
+			System.out.format("Precision: %f\n\n", precision);
 
 			sumAveragePrecisions += ap_arr.get(i);
 		}
 
 		System.out.format("Mean Average Precision: %f\n", (sumAveragePrecisions/ rel_arr.size()));
-
-		
-		System.out.println(tp_arr);
-		System.out.println(ap_arr);
-		// MAP IT UP
 	}
 
+	/**
+	 * Creates the searchable index.
+	 * @param analyzer The analyzer used by indexer and the indexSearcher.
+	 * @param index The directory containing the index.
+	 * @param corpusPath The pathname to the processed corpus data.
+	*/
 	public static void createIndex(StandardAnalyzer analyzer, Directory index, String corpusPath) throws IOException {
-
 		File file = new File(corpusPath);
 		Scanner fin = new Scanner(file);
 		IndexWriterConfig config = new IndexWriterConfig(analyzer);
 		IndexWriter w = new IndexWriter(index, config);
 		Integer count = 0;
 
+		// Uses lines from corpus_data.txt to create documents in the index.
 		try {
 			while(fin.hasNextLine()) {
 				Document doc = new Document();
@@ -130,59 +127,74 @@ public class Main {
 		fin.close();
 	}
 
-	public static ArrayList<Integer> searchIndex(StandardAnalyzer analyzer, Directory index, String query, String fieldToSearch) throws IOException, ParseException {
-		// 2. query
-		while(true) {
-			// the "title" arg specifies the default field to use
-			// when no field is explicitly specified in the query.
-			QueryParser parser = new QueryParser(fieldToSearch, analyzer);
-			org.apache.lucene.search.Query q;
-			try {
-				q = parser.parse(query);
-			}
-			// I AM SO SORRY
-			catch (Exception e) {
-				System.out.println(e);
-				q = null;
-			}
+	/**
+	 * Parses the query and searches the index.
+	 * @param analyzer The analyzer used by indexer and the indexSearcher.
+	 * @param index The directory containing the index.
+	 * @param query The query string.
+	 * @param fieldToSearch The index field to search
+	 * @param searchSize The maximum number of documents to return. Set to 1400 to encompass the entire corpus.
+	 * @return An ArrayList of doc_ids of the found Documents.
+	*/
+	public static ArrayList<Integer> searchIndex(StandardAnalyzer analyzer, Directory index, String query, String fieldToSearch, Integer searchSize) throws IOException, ParseException {
+		// the "title" arg specifies the default field to use
+		// when no field is explicitly specified in the query.
+		QueryParser parser = new QueryParser(fieldToSearch, analyzer);
+		org.apache.lucene.search.Query q;
+		try {
+			q = parser.parse(query);
+		}
+		// I AM SO SORRY
+		catch (Exception e) {
+			System.out.println(e);
+			q = null;
+		}
 
-			// 3. search
-			int hitsPerPage = 400;
-			IndexReader reader = DirectoryReader.open(index);
-			IndexSearcher searcher = new IndexSearcher(reader);
-			TopDocs docs = searcher.search(q, hitsPerPage);
-			ScoreDoc[] hits = docs.scoreDocs;
-			ArrayList<Integer> hits_arr = new ArrayList<Integer>();
+		// Search the index.
+		int hitsPerPage = searchSize;
+		IndexReader reader = DirectoryReader.open(index);
+		IndexSearcher searcher = new IndexSearcher(reader);
+		TopDocs docs = searcher.search(q, hitsPerPage);
+		ScoreDoc[] hits = docs.scoreDocs;
+		ArrayList<Integer> hits_arr = new ArrayList<Integer>();
 
-			// Add hits to array.
-			for (int i = 0; i < hits.length; ++i) {
-				int docId = hits[i].doc;
-				hits_arr.add(docId);
-				org.apache.lucene.document.Document d = searcher.doc(docId);
-			}
+		// Add hits to array.
+		for (int i = 0; i < hits.length; ++i) {
+			int docId = hits[i].doc;
+			hits_arr.add(docId);
+			org.apache.lucene.document.Document d = searcher.doc(docId);
+		}
 
-			// reader can only be closed when there
-			// is no need to access the documents any more.
-			reader.close();
-			return hits_arr;
-			}
+		reader.close();
+		return hits_arr;
 	}
 
-	public static double findTruePositives(ArrayList<Integer> guess, ArrayList<Integer> truth) {
-		// System.out.println(guess.size());
+	/**
+	 * Finds relevant documents in returned search.
+	 * @param searchResults The results of a search.
+	 * @param relevantDocs The DocIds of relevant documents.
+	 * @return The number of relevant documents within a search's results. Otherwise known as "True Positives".
+	*/
+	public static double findTruePositives(ArrayList<Integer> searchResults, ArrayList<Integer> relevantDocs) {
 		double tp_sum = 0;
-		for(Integer i: truth) {
-			if (guess.contains(i)) {
+		for(Integer i: relevantDocs) {
+			if (searchResults.contains(i)) {
 				tp_sum += 1;
 			}
 		}
 		return tp_sum;
 	}
 
-	public static ArrayList<Integer> indiciesOfRelevant(ArrayList<Integer> guess,  ArrayList<Integer> truth) {
+	/**
+	 * Finds the indicies of relevant documents within a search's results.
+	 * @param searchResults The results of a search.
+	 * @param relevantDocs The DocIds of relevant documents.
+	 * @return An array where a 1 represents a found relevant document and a 0 represents that a document was not relevant.
+	*/
+	public static ArrayList<Integer> indiciesOfRelevant(ArrayList<Integer> searchResults,  ArrayList<Integer> relevantDocs) {
 		ArrayList<Integer> indicies = new ArrayList<Integer>();
-		for(Integer i: truth) {
-			if (guess.contains(i)) {
+		for(Integer i: relevantDocs) {
+			if (searchResults.contains(i)) {
 				indicies.add(1);
 			}
 			else {
@@ -192,23 +204,32 @@ public class Main {
 		return indicies;
 	}
 
-	// TODO: Need to figure this out, well not Quinn technically
-	public static double findAP(ArrayList<Integer> guess, ArrayList<Integer> truth) {
+	/**
+	 * Calculates the average precision of a search.
+	 * @param searchResults The results of a search.
+	 * @param relevantDocs The DocIds of relevant documents.
+	 * @return The average precision of a search.
+	*/
+	public static double findAP(ArrayList<Integer> searchResults, ArrayList<Integer> relevantDocs) {
 		double sum_precisions = 0.0;
 		ArrayList<Double> precisionsArr = new ArrayList<Double>();
-		for (int i = 0; i < guess.size(); i++) {
-			double tp = findTruePositives(new ArrayList<Integer>(guess.subList(0, i)), truth);
+		// Finds the precision of each index by calculating precision for subsets of searchResults.
+		for (int i = 0; i < searchResults.size(); i++) {
+			double tp = findTruePositives(new ArrayList<Integer>(searchResults.subList(0, i)), relevantDocs);
 			double precision = tp / (i + 1.0);
 			precisionsArr.add(precision);
 		}
-		ArrayList<Integer> indicies = indiciesOfRelevant(guess,  truth);
+
+		// Sums the precisions at the index of each relevant document.
+		ArrayList<Integer> indicies = indiciesOfRelevant(searchResults,  relevantDocs);
 		for(int i = 0; i < indicies.size(); i++) {
 			sum_precisions += indicies.get(i) * precisionsArr.get(i);
 		}
 
-		double tp = findTruePositives(guess, truth);
+		double tp = findTruePositives(searchResults, relevantDocs);
 		double averagePrecision =  sum_precisions / tp;
 		
+		// Guards against NaN values entering the array.
 		if(Double.isNaN(averagePrecision)) {
 			return 0.0;
 		} else {
