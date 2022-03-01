@@ -23,7 +23,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class Main {
-	public static ArrayList<Integer> ourSearch(String our_query) throws IOException, ParseException {
+	public static ArrayList<Integer> ourSearch(String our_query, int counter) throws IOException, ParseException {
 		// 0. Specify the analyzer for tokenizing text.
 		// The same analyzer should be used for indexing and searching
 		StandardAnalyzer analyzer = new StandardAnalyzer();
@@ -35,7 +35,7 @@ public class Main {
 
 		IndexWriterConfig config = new IndexWriterConfig(analyzer);
 		boolean preserveIndex = false;
-		if(!preserveIndex) {
+		if(counter < 1) {
 			int count = 0;
 			// TODO: add our docs instead
 			IndexWriter w = new IndexWriter(index, config);
@@ -94,7 +94,7 @@ public class Main {
 				hits_arr.add(docId);
 				org.apache.lucene.document.Document d = searcher.doc(docId);
 				// System.out.println((i + 1) + ". \t" + d.get("doc_id") + ".\t" + d.get("title") + "\t\t\t" + d.get("contents"));
-				System.out.println(d.get("doc_id"));
+				// System.out.println(d.get("doc_id"));
 			}
 
 			// reader can only be closed when there
@@ -117,8 +117,10 @@ public class Main {
 		// System.out.println(truth_ids);
 		// System.out.println(turth_queries);
 		ArrayList<ArrayList<Integer>> guess_ids = new ArrayList<ArrayList<Integer>>();
+		int count = 0;
 		for(String query: queries) {
-			guess_ids.add(ourSearch(query));
+			guess_ids.add(ourSearch(query, count));
+			count++;
 		}
 
 		f = new File("myQueryRels.txt");
@@ -137,8 +139,62 @@ public class Main {
 				}
 			}
 			rel_arr.add(rels);
-			System.out.println(rel_arr);
+			// System.out.println(rel_arr);
 		}
+		System.out.println(rel_arr);
+		ArrayList<Integer> tp_arr = new ArrayList<Integer>();
+		ArrayList<Double> ap_arr = new ArrayList<Double>();
+		for(int i = 0; i < rel_arr.size(); i++) {
+			// tp_arr.add(findTruePositives(guess_ids.get(i), rel_arr.get(i)));
+			ap_arr.add(findAP(guess_ids.get(i), rel_arr.get(i)));
+		}
+		System.out.println(tp_arr);
+		System.out.println(ap_arr);
+		// MAP IT UP
 
 	}
+
+	public static int findTruePositives(ArrayList<Integer> guess, ArrayList<Integer> truth) {
+		// System.out.println(guess.size());
+		int tp_sum = 0;
+		for(Integer i: truth) {
+			if (guess.contains(i)) {
+				tp_sum += 1;
+			}
+		}
+		return tp_sum;
+	}
+
+	public static ArrayList<Integer> indiciesOfRelevant(ArrayList<Integer> guess,  ArrayList<Integer> truth) {
+		ArrayList<Integer> indicies = new ArrayList<Integer>();
+		for(Integer i: truth) {
+			if (guess.contains(i)) {
+				indicies.add(1);
+			}
+			else {
+				indicies.add(0);
+			}
+		}
+		return indicies;
+	}
+
+	// TODO: Need to figure this out, well not Quinn technically
+	public static double findAP(ArrayList<Integer> guess, ArrayList<Integer> truth) {
+		double sum_precisions = 0.0;
+		ArrayList<Double> temp = new ArrayList<Double>();
+		for (int i = 0; i < guess.size(); i++) {
+			double tp = findTruePositives(new ArrayList<Integer>(guess.subList(0, i)), truth);
+			System.out.println(tp);
+			double precision = tp / (i + 1.0);
+			System.out.println(precision);
+			temp.add(precision);
+		}
+		ArrayList<Integer> indicies = indiciesOfRelevant(guess,  truth);
+		for(int i = 0; i < indicies.size(); i++) {
+			sum_precisions += indicies.get(i) * temp.get(i);
+		}
+
+			double tp = findTruePositives(guess, truth);
+			return sum_precisions / tp;
+		}
 }
