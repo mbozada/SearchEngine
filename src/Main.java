@@ -33,13 +33,16 @@ import org.apache.lucene.util.Version;
 public class Main {
 	public static void main(String[] arg) throws IOException, ParseException {
 		// Create Analyzer and open Index's Directory
-		// CharArraySet hello = new CharArraySet(2, true);
-		// Path path = FileSystems.getDefault().getPath(".", "stop_words_english2.txt");
 		
+		// Stop Words Analyzer
+		// Path path = FileSystems.getDefault().getPath(".", "stop_words_english.txt");
 		// Analyzer analyzer = new StopAnalyzer(path);
-		Directory index = FSDirectory.open((new File("./index/").toPath()));
 
+		// Standard Analyzer
 		Analyzer analyzer = new StandardAnalyzer();
+		
+		Directory index = FSDirectory.open((new File("./index/").toPath()));
+		
 
 		// If necessary, create the index using corpus_data.txt
 		boolean createIndex = false;
