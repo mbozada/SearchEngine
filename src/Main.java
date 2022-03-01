@@ -1,12 +1,17 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -23,12 +28,18 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
 
 public class Main {
 	public static void main(String[] arg) throws IOException, ParseException {
 		// Create Analyzer and open Index's Directory
-		StandardAnalyzer analyzer = new StandardAnalyzer();
+		// CharArraySet hello = new CharArraySet(2, true);
+		// Path path = FileSystems.getDefault().getPath(".", "stop_words_english2.txt");
+		
+		// Analyzer analyzer = new StopAnalyzer(path);
 		Directory index = FSDirectory.open((new File("./index/").toPath()));
+
+		Analyzer analyzer = new StandardAnalyzer();
 
 		// If necessary, create the index using corpus_data.txt
 		boolean createIndex = false;
@@ -85,6 +96,8 @@ public class Main {
 		for(int i = 0; i < rel_arr.size(); i++) {
 			System.out.format("Query: %d\n", (i+1));
 
+			System.out.format("Hits %f\n", guess_sizes.get(i));
+
 			Double recall = tp_arr.get(i) / rel_arr.get(i).size();
 			System.out.format("Recall: %f\n", recall);
 
@@ -103,7 +116,7 @@ public class Main {
 	 * @param index The directory containing the index.
 	 * @param corpusPath The pathname to the processed corpus data.
 	*/
-	public static void createIndex(StandardAnalyzer analyzer, Directory index, String corpusPath) throws IOException {
+	public static void createIndex(Analyzer analyzer, Directory index, String corpusPath) throws IOException {
 		File file = new File(corpusPath);
 		Scanner fin = new Scanner(file);
 		IndexWriterConfig config = new IndexWriterConfig(analyzer);
@@ -138,7 +151,7 @@ public class Main {
 	 * @param query The query string.
 	 * @return An ArrayList of doc_ids of the found Documents.
 	*/
-	public static ArrayList<Integer> searchIndex(StandardAnalyzer analyzer, Directory index, String query) throws IOException, ParseException {
+	public static ArrayList<Integer> searchIndex(Analyzer analyzer, Directory index, String query) throws IOException, ParseException {
 		// Boosts the title field over contents for increased MAP
 		Map<String, Float> boost = new HashMap<String, Float>();
 		boost.put("title", (float) .75);
