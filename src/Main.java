@@ -23,13 +23,13 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class Main {
-	public static void main(String[] arggggggggggggggggggggggg) throws IOException, ParseException {
+	public static void main(String[] arg) throws IOException, ParseException {
 		// Create Analyzer and open Index's Directory
 		StandardAnalyzer analyzer = new StandardAnalyzer();
 		Directory index = FSDirectory.open((new File("./index/").toPath()));
 
 		// If necessary, create the index using corpus_data.txt
-		boolean createIndex = true;
+		boolean createIndex = false;
 		if(createIndex) {
 			createIndex(analyzer, index, "corpus_data.txt");
 		}
@@ -47,7 +47,7 @@ public class Main {
 		// System.out.println(turth_queries);
 		ArrayList<ArrayList<Integer>> guess_ids = new ArrayList<ArrayList<Integer>>();
 		for(String query: queries) {
-			guess_ids.add(searchIndex(analyzer, index, query, "title"));
+			guess_ids.add(searchIndex(analyzer, index, query, "contents"));
 		}
 
 		// Process myQueryRels.txt into Array of Arrays of Ints for relevant document matching.
@@ -70,17 +70,36 @@ public class Main {
 			// System.out.println(rel_arr);
 		}
 		fin.close();
-		System.out.println(rel_arr);
-		ArrayList<Integer> tp_arr = new ArrayList<Integer>();
+		ArrayList<Double> guess_sizes = new ArrayList<Double>();
+		ArrayList<Double> tp_arr = new ArrayList<Double>();
 		ArrayList<Double> ap_arr = new ArrayList<Double>();
+		
 		for(int i = 0; i < rel_arr.size(); i++) {
-			// tp_arr.add(findTruePositives(guess_ids.get(i), rel_arr.get(i)));
+			guess_sizes.add((guess_ids.get(i).size() + 0.0));
+			tp_arr.add(findTruePositives(guess_ids.get(i), rel_arr.get(i)));
 			ap_arr.add(findAP(guess_ids.get(i), rel_arr.get(i)));
 		}
+
+		// Output Precision and Recall for each query. Sum Precisions.
+		double sumAveragePrecisions = 0;
+		for(int i = 0; i < rel_arr.size(); i++) {
+			System.out.format("Query: %d\n", (i+1));
+
+			Double recall = tp_arr.get(i) / rel_arr.get(i).size();
+			System.out.format("Recall: %f\n", recall);
+
+			Double precision = tp_arr.get(i) / guess_sizes.get(i);
+			System.out.format("Precision: %f\n", precision);
+
+			sumAveragePrecisions += ap_arr.get(i);
+		}
+
+		System.out.format("Mean Average Precision: %f\n", (sumAveragePrecisions/ rel_arr.size()));
+
+		
 		System.out.println(tp_arr);
 		System.out.println(ap_arr);
 		// MAP IT UP
-
 	}
 
 	public static void createIndex(StandardAnalyzer analyzer, Directory index, String corpusPath) throws IOException {
@@ -93,12 +112,9 @@ public class Main {
 
 		try {
 			while(fin.hasNextLine()) {
-				// System.out.println("hello");
 				Document doc = new Document();
 				String title = fin.nextLine();
 				String contents = fin.nextLine();
-				// System.out.println(title);
-				// System.out.println(contents);
 				count++;
 				String countString = Integer.toString(count);
 				doc.add(new Field("doc_id", countString, TextField.TYPE_STORED));
@@ -131,7 +147,7 @@ public class Main {
 			}
 
 			// 3. search
-			int hitsPerPage = 1401;
+			int hitsPerPage = 400;
 			IndexReader reader = DirectoryReader.open(index);
 			IndexSearcher searcher = new IndexSearcher(reader);
 			TopDocs docs = searcher.search(q, hitsPerPage);
@@ -150,12 +166,11 @@ public class Main {
 			reader.close();
 			return hits_arr;
 			}
-		
 	}
 
-	public static int findTruePositives(ArrayList<Integer> guess, ArrayList<Integer> truth) {
+	public static double findTruePositives(ArrayList<Integer> guess, ArrayList<Integer> truth) {
 		// System.out.println(guess.size());
-		int tp_sum = 0;
+		double tp_sum = 0;
 		for(Integer i: truth) {
 			if (guess.contains(i)) {
 				tp_sum += 1;
@@ -180,20 +195,24 @@ public class Main {
 	// TODO: Need to figure this out, well not Quinn technically
 	public static double findAP(ArrayList<Integer> guess, ArrayList<Integer> truth) {
 		double sum_precisions = 0.0;
-		ArrayList<Double> temp = new ArrayList<Double>();
+		ArrayList<Double> precisionsArr = new ArrayList<Double>();
 		for (int i = 0; i < guess.size(); i++) {
 			double tp = findTruePositives(new ArrayList<Integer>(guess.subList(0, i)), truth);
-			System.out.println(tp);
 			double precision = tp / (i + 1.0);
-			System.out.println(precision);
-			temp.add(precision);
+			precisionsArr.add(precision);
 		}
 		ArrayList<Integer> indicies = indiciesOfRelevant(guess,  truth);
 		for(int i = 0; i < indicies.size(); i++) {
-			sum_precisions += indicies.get(i) * temp.get(i);
+			sum_precisions += indicies.get(i) * precisionsArr.get(i);
 		}
 
-			double tp = findTruePositives(guess, truth);
-			return sum_precisions / tp;
+		double tp = findTruePositives(guess, truth);
+		double averagePrecision =  sum_precisions / tp;
+		
+		if(Double.isNaN(averagePrecision)) {
+			return 0.0;
+		} else {
+			return averagePrecision;
 		}
+	}
 }
