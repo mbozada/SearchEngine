@@ -1,3 +1,7 @@
+# Processes a slightly modified cran.all
+# Pulls out Titles(.T) and Contents(.W)
+# Writes to corpus_data.txt
+
 title_count = 0
 abstract_count = 0
 
