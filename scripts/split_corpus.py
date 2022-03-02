@@ -6,7 +6,7 @@ title_count = 0
 abstract_count = 0
 
 # Shouldn't work, but it does
-with open('./corpus/cran.all.1400') as f:
+with open('/home/michael/projects/SearchEngine/corpus/cran.all') as f:
     lines = f.readlines()
     join_titles = False
     title = ""
@@ -58,7 +58,7 @@ with open('./corpus/cran.all.1400') as f:
 # print(title_list[-1])
 # print(abstract_list[-1])
 
-with open ('corpus_data.txt', 'w') as f:
+with open ('/home/michael/projects/SearchEngine/input/corpus_data2.txt', 'w') as f:
     for i in range(len(abstract_list)):
         f.write(title_list[i] + '\n')
         f.write(abstract_list[i] + '\n')

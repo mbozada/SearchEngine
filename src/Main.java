@@ -43,7 +43,6 @@ public class Main {
 		
 		Directory index = FSDirectory.open((new File("./index/").toPath()));
 		
-
 		// If necessary, create the index using corpus_data.txt
 		boolean createIndex = false;
 		if(createIndex) {
@@ -53,7 +52,7 @@ public class Main {
 		// Load in test queries from myQuery.txt
 		ArrayList<Integer> query_ids = new ArrayList<Integer>();
 		ArrayList<String> queries = new ArrayList<String>();
-		File f = new File("myQuery.txt");
+		File f = new File("./input/myQuery.txt");
 		Scanner fin = new Scanner(f);
 		while(fin.hasNextLine()) {
 			query_ids.add(Integer.parseInt(fin.nextLine()));
@@ -67,7 +66,7 @@ public class Main {
 		}
 
 		// Process myQueryRels.txt for future Recall and Precision Calculations
-		f = new File("myQueryRels.txt");
+		f = new File("./input/myQueryRels.txt");
 		fin = new Scanner(f);
 		ArrayList<ArrayList<Integer>> rel_arr = new ArrayList<ArrayList<Integer>>();
 		while(fin.hasNextLine()) {
