@@ -32,21 +32,26 @@ import org.apache.lucene.util.Version;
 
 public class Main {
 	public static void main(String[] arg) throws IOException, ParseException {
-		// Create Analyzer and open Index's Directory
+		// When any of these flags are changed, it's best to recreate the index.
+		boolean createIndex = false; // Flag to create index
+		boolean multiIndex = false; // Flag to use MultiIndexer
+		boolean stopWords = false; // Flag to use a StopWord Analyzer
 		
-		// Stop Words Analyzer
-		// Path path = FileSystems.getDefault().getPath(".", "stop_words_english.txt");
-		// Analyzer analyzer = new StopAnalyzer(path);
-
-		// Standard Analyzer
+		// Create Analyzer and open Index's Directory
+		// Use a StopAnalyzer or StandardAnalyzer
 		Analyzer analyzer = new StandardAnalyzer();
+		if(stopWords) {
+			Path path = FileSystems.getDefault().getPath("./input/", "stop_words_english.txt");
+			analyzer = new StopAnalyzer(path);
+		}
+
+		
 		
 		Directory index = FSDirectory.open((new File("./index/").toPath()));
 		
 		// If necessary, create the index using corpus_data.txt
-		boolean createIndex = false;
 		if(createIndex) {
-			createIndex(analyzer, index, "corpus_data.txt");
+			createIndex(analyzer, index, "./input/corpus_data.txt");
 		}
 		
 		// Load in test queries from myQuery.txt
@@ -62,7 +67,12 @@ public class Main {
 		// Search index using test queries.
 		ArrayList<ArrayList<Integer>> guess_ids = new ArrayList<ArrayList<Integer>>();
 		for(String query: queries) {
-			guess_ids.add(searchIndex(analyzer, index, query));
+			try {
+				guess_ids.add(searchIndex(analyzer, index, query, multiIndex));
+			} catch (org.apache.lucene.queryparser.classic.ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		// Process myQueryRels.txt for future Recall and Precision Calculations
@@ -153,21 +163,21 @@ public class Main {
 	 * @param query The query string.
 	 * @return An ArrayList of doc_ids of the found Documents.
 	*/
-	public static ArrayList<Integer> searchIndex(Analyzer analyzer, Directory index, String query) throws IOException, ParseException {
+	public static ArrayList<Integer> searchIndex(Analyzer analyzer, Directory index, String query, Boolean multi) throws IOException, ParseException, org.apache.lucene.queryparser.classic.ParseException {
 		// Boosts the title field over contents for increased MAP
+
 		Map<String, Float> boost = new HashMap<String, Float>();
 		boost.put("title", (float) .75);
 		boost.put("contents", (float) .25);
-		MultiFieldQueryParser parser = new MultiFieldQueryParser(new String[] {"title", "contents"}, analyzer, boost);
+		MultiFieldQueryParser multiParser = new MultiFieldQueryParser(new String[] {"title", "contents"}, analyzer, boost);
+		QueryParser parser = new QueryParser("title", analyzer);
 
 		org.apache.lucene.search.Query q;
-		try {
-			q = parser.parse(query);
+		if(multi) {
+			q = multiParser.parse(query);
 		}
-		// I AM SO SORRY
-		catch (Exception e) {
-			System.out.println(e);
-			q = null;
+		else {
+			q = parser.parse(query);
 		}
 
 		// Search the index.
