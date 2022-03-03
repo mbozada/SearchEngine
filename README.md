@@ -43,3 +43,26 @@ Python Scripts used to prepare the corpus for Lucene.
 __Main.java__ is the singular source file. Run to use the Search Engine.
 
 ## Report
+### Indexer
+__createIndex()__ on line 129  
+Pretty straightforward. Can be run with the StopAnalyzer if needed.  
+
+### Index Searcher
+__searchIndex()__ on line 164  
+Uses either StandardAnalyzer or StopAnalyzer depending on the set flags.  
+If multiIndex is set to true, it will use the MultiIndexQueryParser with boosted Fields.  
+
+### Lucene Experience
+We used Total Hits, Recall, Precision, and MAP to evaluate different configurations.  
+
+Due to inexperience, it's difficult to say whether the different configurations "enhanced" search results.  
+
+Surprisingly, the standard configuration had the highest MAP at 0.011253, but that's obviously a pretty low number.  
+
+With just the multiIndexer enabled, hits blew up across the board. That let Recall = 1.000 for almost all queries, but Recall isn't a good metric when you're retrieiving every document...  
+
+Enabling only stop words resulted in the lowest MAP, but had mixed performance on individual queries. It brought hits to their lowest numbers, but Recall and Precision were frequently 0. Maybe a different stop words list would improve results.  
+
+Finally, using both the boosted multiIndex and stopWords analyzer gave somewhat confusing results. I don't know if it's the best or worst of both worlds, but performance seems averaged between the extremes of just MultiIndex or stopWords.  
+
+In conclusion, working with Lucene was interesting but frustrating. It's difficult to assess performance and even more difficult to concretely improve search results.  
