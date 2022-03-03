@@ -24,7 +24,7 @@ for query_rel in query_rels:
 
     print()
 
-with open ('/home/michael/projects/SearchEngine/input/myQueryRels2.txt', 'w') as f:
+with open ('/home/michael/projects/SearchEngine/input/myQueryRels.txt', 'w') as f:
     for query_rel in query_rels:
         for query in query_rel:
             f.write(f"{query} ")

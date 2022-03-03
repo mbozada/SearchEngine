@@ -45,8 +45,6 @@ public class Main {
 			analyzer = new StopAnalyzer(path);
 		}
 
-		
-		
 		Directory index = FSDirectory.open((new File("./index/").toPath()));
 		
 		// If necessary, create the index using corpus_data.txt
@@ -165,11 +163,12 @@ public class Main {
 	*/
 	public static ArrayList<Integer> searchIndex(Analyzer analyzer, Directory index, String query, Boolean multi) throws IOException, ParseException, org.apache.lucene.queryparser.classic.ParseException {
 		// Boosts the title field over contents for increased MAP
-
 		Map<String, Float> boost = new HashMap<String, Float>();
 		boost.put("title", (float) .75);
 		boost.put("contents", (float) .25);
 		MultiFieldQueryParser multiParser = new MultiFieldQueryParser(new String[] {"title", "contents"}, analyzer, boost);
+
+		// Standard parser over just the title field.
 		QueryParser parser = new QueryParser("title", analyzer);
 
 		org.apache.lucene.search.Query q;
@@ -200,7 +199,6 @@ public class Main {
 			// Could be used to print out document fields
 			// org.apache.lucene.document.Document d = searcher.doc(docId);
 		}
-
 		reader.close();
 		return hits_arr;
 	}
