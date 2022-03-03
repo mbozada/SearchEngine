@@ -10,7 +10,7 @@ hirt.14@wright.edu
 
 ## Directories and Files
 ### corpus/  
-Cranfield datset files downloadable from Prasad's [website](https://web1.cs.wright.edu/~tkprasad/courses/cs7800/cs7800.html).  
+Cranfield dataset files downloadable from Prasad's [website](https://web1.cs.wright.edu/~tkprasad/courses/cs7800/cs7800.html).  
 corpus/cran.all has been slightly modified to make processing the dataset for Lucene easier.
 
 ### index/
@@ -28,8 +28,18 @@ Input files required by Main.java.
 Lucene 9.0.0 required .jar files.
 
 ### output/
-Contains the output of running the 20 selected test queries with diffierent Search Engine configurations.
+Output of running the 20 selected test queries with diffierent Search Engine configurations.
 - __1_standard_resultx.txt__: StandardAnalyzer, Single Field Query Parser
 - __2_multiIndex_resultx.txt__: StandardAnalyzer, Boosted MultiField Query Parser
 - __3_stopWords_resultx.txt__: StopAnalyzer, Single Field Query Parser
 - __4_multiIndex_stopWords_resultx.txt__: StopAnalyzer, Boosted MultiField Query Parser
+
+### scripts/
+Python Scripts used to prepare the corpus for Lucene.
+- __format_relevance.py__: Creates __input/myQueryRels.txt__ using __corpus/qrels.text__
+- __split_corpus.py__: Creates __input/corpus_data.txt__ using __corpus/cran.all__
+
+### src/
+__Main.java__ is the singular source file. Run to use the Search Engine.
+
+## Report
