@@ -4,7 +4,7 @@
 query_ids = [1, 2, 4, 8, 9, 10, 12, 13, 15, 18, 22, 23, 26, 27, 29, 31, 32, 33, 34, 35]
 query_rels = []
 
-with open('/home/michael/projects/SearchEngine/corpus/qrels.text') as f:
+with open('../corpus/qrels.text') as f:
     lines = f.readlines()
     for query_id in query_ids:
         first_run = True
@@ -18,13 +18,8 @@ with open('/home/michael/projects/SearchEngine/corpus/qrels.text') as f:
                 query_rel.append(split_line[1])
         query_rels.append(query_rel)
 
-for query_rel in query_rels:
-    for query in query_rel:
-        print(f"{query}", end=" ")
 
-    print()
-
-with open ('/home/michael/projects/SearchEngine/input/myQueryRels.txt', 'w') as f:
+with open ('../input/myQueryRels.txt', 'w') as f:
     for query_rel in query_rels:
         for query in query_rel:
             f.write(f"{query} ")
